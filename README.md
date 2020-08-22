@@ -1,0 +1,3 @@
+# compound
+
+Compound interest calculator

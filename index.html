@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compound Interest Calculator</title>
+    <style>
+      body {
+        margin: 0 auto;
+        padding: 1rem;
+        max-width: 36rem;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 1rem;
+      }
+
+      h4#message {
+        text-align: center;
+      }
+
+      .input-row {
+        display: flex;
+        flex-direction: row;
+        margin-bottom: 0.5rem;
+      }
+
+      .input-row > * {
+        flex: 1;
+        display: flex;
+      }
+
+      .input-row label {
+        justify-content: right;
+        align-items: center;
+        margin-right: 10px;
+      }
+
+      .input-row input,
+      .input-row div {
+        font-size: 1rem;
+        padding: 0.5rem;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1.5rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.35rem;
+        border: 1px black solid;
+        text-align: right;
+      }
+
+      @media only screen and (max-width: 415px) {
+        .input-row {
+          flex-direction: column;
+        }
+
+        .input-row label {
+          justify-content: initial;
+          margin-bottom: 10px;
+        }
+
+        table {
+          font-size: 0.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <form id="compound-form">
+      <div class="input-row">
+        <label for="principal">Principal ($):</label>
+        <input type="number" name="principal" id="principal" value="1000" />
+      </div>
+      <div class="input-row">
+        <label for="contribution">Annual contribution ($):</label>
+        <input
+          type="number"
+          name="contribution"
+          id="contribution"
+          value="0.00"
+        />
+      </div>
+      <div class="input-row">
+        <label for="years-to-grow">Years to grow:</label>
+        <input
+          type="number"
+          name="yearsToGrow"
+          id="years-to-grow"
+          min="0"
+          max="50"
+          value="15"
+        />
+      </div>
+      <div class="input-row">
+        <label for="interest-rate">Interest rate:</label>
+        <input
+          type="number"
+          name="interestRate"
+          id="interest-rate"
+          step="0.01"
+          min="-0.30"
+          max="0.30"
+          value="0.08"
+        />
+      </div>
+      <div class="input-row">
+        <label>Compond:</label>
+        <div>
+          <span>
+            <input
+              type="radio"
+              name="beforeAfter"
+              id="beforeGrowth"
+              value="before"
+              checked
+            />
+            <label for="beforeGrowth">before</label>
+          </span>
+          <span>
+            <input
+              type="radio"
+              name="beforeAfter"
+              id="afterGrowth"
+              value="after"
+            />
+            <label for="afterGrowth">after contribution</label>
+          </span>
+        </div>
+      </div>
+    </form>
+    <h4 id="message"></h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Start Balance</th>
+          <th>Growth</th>
+          <th>End Balance</th>
+        </tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+
+    <script>
+      const resultsElement = document.getElementById("results");
+      const principalElement = document.getElementById("principal");
+      const contributionElement = document.getElementById("contribution");
+      const interestRateElement = document.getElementById("interest-rate");
+      const yearsToGrowElement = document.getElementById("years-to-grow");
+      const beforeElement = document.getElementById('beforeGrowth');
+      const afterElement = document.getElementById('afterGrowth');
+      const messageElement = document.getElementById('message');
+
+      principalElement.addEventListener("input", doTheThing);
+      contributionElement.addEventListener("input", doTheThing);
+      interestRateElement.addEventListener("input", doTheThing);
+      yearsToGrowElement.addEventListener("input", doTheThing);
+      beforeElement.addEventListener("input", doTheThing);
+      afterElement.addEventListener("input", doTheThing);
+
+      function currencyFormat(num) {
+        return "$" + num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
+      }
+
+      function calculate(principal, contribution, interestRate, yearsToGrow, isBefore) {
+        let balance = principal;
+
+        const rows = [];
+        for (let year = 0; year <= yearsToGrow; year++) {
+          const startingBalance = balance;
+          let growth;
+          if (isBefore) {
+            balance += contribution;
+            growth = balance * interestRate;
+            balance += growth;
+          } else {
+            growth = balance * interestRate;
+            balance += growth;
+            balance += contribution;
+          }
+          const endingBalance = balance;
+          rows.push({ year, startingBalance, growth, endingBalance });
+        }
+
+        return rows;
+      }
+
+      function createTdElement(text) {
+        const tdElement = document.createElement("td");
+        tdElement.innerText = text;
+        return tdElement;
+      }
+
+      function doTheThing() {
+        const rows = calculate(
+          principalElement.valueAsNumber,
+          contributionElement.valueAsNumber,
+          interestRateElement.valueAsNumber,
+          yearsToGrowElement.valueAsNumber,
+          document.querySelector('input[name="beforeAfter"]:checked').value === 'before'
+        );
+
+        const endingBalance = currencyFormat(rows[rows.length - 1].endingBalance);
+        messageElement.innerHTML = `
+          Final balance: ${endingBalance}
+        `;
+
+        // Clear out all the children in the results
+        while (resultsElement.firstChild) {
+          resultsElement.removeChild(resultsElement.firstChild);
+        }
+
+        // And then add the rows to the results
+        rows.forEach((row) => {
+          const trElement = document.createElement("tr");
+          trElement.appendChild(createTdElement(row.year));
+          trElement.appendChild(
+            createTdElement(currencyFormat(row.startingBalance))
+          );
+          trElement.appendChild(createTdElement(currencyFormat(row.growth)));
+          trElement.appendChild(
+            createTdElement(currencyFormat(row.endingBalance))
+          );
+          resultsElement.appendChild(trElement);
+        });
+      }
+
+      // Initial start
+      doTheThing();
+    </script>
+  </body>
+</html>
