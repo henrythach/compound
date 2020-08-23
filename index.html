@@ -77,23 +77,11 @@
       </div>
       <div class="input-row">
         <label for="contribution">Annual contribution ($):</label>
-        <input
-          type="number"
-          name="contribution"
-          id="contribution"
-          value="0.00"
-        />
+        <input type="number" name="contribution" id="contribution" value="0.00" />
       </div>
       <div class="input-row">
         <label for="years-to-grow">Years to grow:</label>
-        <input
-          type="number"
-          name="yearsToGrow"
-          id="years-to-grow"
-          min="0"
-          max="50"
-          value="15"
-        />
+        <input type="number" name="yearsToGrow" id="years-to-grow" min="0" max="50" value="15" />
       </div>
       <div class="input-row">
         <label for="interest-rate">Interest rate:</label>
@@ -101,9 +89,9 @@
           type="number"
           name="interestRate"
           id="interest-rate"
-          step="0.01"
-          min="-0.30"
-          max="0.30"
+          step="0.005"
+          min="-0.15"
+          max="0.15"
           value="0.08"
         />
       </div>
@@ -111,22 +99,11 @@
         <label>Compond:</label>
         <div>
           <span>
-            <input
-              type="radio"
-              name="beforeAfter"
-              id="beforeGrowth"
-              value="before"
-              checked
-            />
+            <input type="radio" name="beforeAfter" id="beforeGrowth" value="before" checked />
             <label for="beforeGrowth">before</label>
           </span>
           <span>
-            <input
-              type="radio"
-              name="beforeAfter"
-              id="afterGrowth"
-              value="after"
-            />
+            <input type="radio" name="beforeAfter" id="afterGrowth" value="after" />
             <label for="afterGrowth">after contribution</label>
           </span>
         </div>
@@ -150,16 +127,58 @@
       const contributionElement = document.getElementById("contribution");
       const interestRateElement = document.getElementById("interest-rate");
       const yearsToGrowElement = document.getElementById("years-to-grow");
-      const beforeElement = document.getElementById('beforeGrowth');
-      const afterElement = document.getElementById('afterGrowth');
-      const messageElement = document.getElementById('message');
+      const beforeElement = document.getElementById("beforeGrowth");
+      const afterElement = document.getElementById("afterGrowth");
+      const messageElement = document.getElementById("message");
 
-      principalElement.addEventListener("input", doTheThing);
-      contributionElement.addEventListener("input", doTheThing);
-      interestRateElement.addEventListener("input", doTheThing);
-      yearsToGrowElement.addEventListener("input", doTheThing);
-      beforeElement.addEventListener("input", doTheThing);
-      afterElement.addEventListener("input", doTheThing);
+      principalElement.value = localStorage.getItem("principal") || "1000";
+      contributionElement.value = localStorage.getItem("contribution") || "0.00";
+      interestRateElement.value = localStorage.getItem("interestRate") || "0.08";
+      yearsToGrowElement.value = localStorage.getItem("yearsToGrow") || "30";
+
+      const beforeAfter = localStorage.getItem("beforeAfter") || "before";
+      beforeElement.checked = beforeAfter === "before";
+      afterElement.checked = beforeAfter === "after";
+
+      principalElement.addEventListener("input", ({ target: { value } }) => {
+        localStorage.setItem("principal", value);
+        doTheThing();
+      });
+
+      contributionElement.addEventListener("input", ({ target: { value } }) => {
+        localStorage.setItem("contribution", value);
+        doTheThing();
+      });
+
+      interestRateElement.addEventListener("input", ({ target: { value } }) => {
+        if (value < -0.15) {
+          interestRateElement.value = -0.15;
+        } else if (value > 0.15) {
+          interestRateElement.value = 0.15;
+        }
+        localStorage.setItem("interestRate", value);
+        doTheThing();
+      });
+
+      yearsToGrowElement.addEventListener("input", ({ target: { value } }) => {
+        if (value < 0) {
+          yearsToGrowElement.value = 0;
+        } else if (value > 50) {
+          yearsToGrowElement.value = 50;
+        }
+        localStorage.setItem("yearsToGrow", value);
+        doTheThing();
+      });
+
+      beforeElement.addEventListener("input", ({ target: { value } }) => {
+        localStorage.setItem("beforeAfter", value);
+        doTheThing();
+      });
+
+      afterElement.addEventListener("input", ({ target: { value } }) => {
+        localStorage.setItem("beforeAfter", value);
+        doTheThing();
+      });
 
       function currencyFormat(num) {
         return "$" + num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
@@ -167,9 +186,10 @@
 
       function calculate(principal, contribution, interestRate, yearsToGrow, isBefore) {
         let balance = principal;
+        const maxYears = yearsToGrow > 50 ? 50 : yearsToGrow;
 
         const rows = [];
-        for (let year = 0; year <= yearsToGrow; year++) {
+        for (let year = 0; year <= maxYears; year++) {
           const startingBalance = balance;
           let growth;
           if (isBefore) {
@@ -200,12 +220,14 @@
           contributionElement.valueAsNumber,
           interestRateElement.valueAsNumber,
           yearsToGrowElement.valueAsNumber,
-          document.querySelector('input[name="beforeAfter"]:checked').value === 'before'
+          document.querySelector('input[name="beforeAfter"]:checked').value === "before"
         );
 
-        const endingBalance = currencyFormat(rows[rows.length - 1].endingBalance);
+        const lastRow = rows[rows.length - 1];
+        const endingBalance = currencyFormat(lastRow.endingBalance);
+        const endingYear = lastRow.year;
         messageElement.innerHTML = `
-          Final balance: ${endingBalance}
+          Final year (${endingYear}): ${endingBalance}
         `;
 
         // Clear out all the children in the results
@@ -217,13 +239,9 @@
         rows.forEach((row) => {
           const trElement = document.createElement("tr");
           trElement.appendChild(createTdElement(row.year));
-          trElement.appendChild(
-            createTdElement(currencyFormat(row.startingBalance))
-          );
+          trElement.appendChild(createTdElement(currencyFormat(row.startingBalance)));
           trElement.appendChild(createTdElement(currencyFormat(row.growth)));
-          trElement.appendChild(
-            createTdElement(currencyFormat(row.endingBalance))
-          );
+          trElement.appendChild(createTdElement(currencyFormat(row.endingBalance)));
           resultsElement.appendChild(trElement);
         });
       }
