@@ -184,9 +184,11 @@
         return "$" + num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
       }
 
-      function calculate(principal, contribution, interestRate, yearsToGrow, isBefore) {
-        let balance = principal;
-        const maxYears = yearsToGrow > 50 ? 50 : yearsToGrow;
+      function calculate(principal = 0, contribution = 0, interestRate = 0, yearsToGrow = 1, isBefore = true) {
+        let balance = principal || 0;
+        const maxYears = yearsToGrow ? yearsToGrow > 50 ? 50 : yearsToGrow : 0;
+        contribution = contribution || 0;
+        interestRate = interestRate || 0;
 
         const rows = [];
         for (let year = 0; year <= maxYears; year++) {
