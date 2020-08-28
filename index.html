@@ -80,18 +80,18 @@
         <input type="number" name="contribution" id="contribution" value="0.00" />
       </div>
       <div class="input-row">
-        <label for="years-to-grow">Years to grow:</label>
-        <input type="number" name="yearsToGrow" id="years-to-grow" min="0" max="50" value="15" />
+        <label for="years-to-grow">Years to grow (<span id="years-to-grow-text"></span>):</label>
+        <input type="range" name="yearsToGrow" id="years-to-grow" min="0" max="50" value="15" />
       </div>
       <div class="input-row">
-        <label for="interest-rate">Interest rate:</label>
+        <label for="interest-rate">Interest rate (<span id="interest-rate-text"></span>):</label>
         <input
-          type="number"
+          type="range"
           name="interestRate"
           id="interest-rate"
-          step="0.005"
-          min="-0.15"
-          max="0.15"
+          step="0.001"
+          min="0"
+          max="0.20"
           value="0.08"
         />
       </div>
@@ -130,6 +130,8 @@
       const beforeElement = document.getElementById("beforeGrowth");
       const afterElement = document.getElementById("afterGrowth");
       const messageElement = document.getElementById("message");
+      const interestRateText = document.getElementById('interest-rate-text');
+      const yearsToGrowText = document.getElementById('years-to-grow-text');
 
       principalElement.value = localStorage.getItem("principal") || "1000";
       contributionElement.value = localStorage.getItem("contribution") || "0.00";
@@ -151,10 +153,10 @@
       });
 
       interestRateElement.addEventListener("input", ({ target: { value } }) => {
-        if (value < -0.15) {
-          interestRateElement.value = -0.15;
-        } else if (value > 0.15) {
-          interestRateElement.value = 0.15;
+        if (value < 0) {
+          interestRateElement.value = 0;
+        } else if (value > 0.20) {
+          interestRateElement.value = 0.20;
         }
         localStorage.setItem("interestRate", value);
         doTheThing();
@@ -217,6 +219,8 @@
       }
 
       function doTheThing() {
+        interestRateText.innerText = `${(interestRateElement.valueAsNumber * 100).toFixed(1)}%`;
+        yearsToGrowText.innerText = `${yearsToGrowElement.valueAsNumber}`;
         const rows = calculate(
           principalElement.valueAsNumber,
           contributionElement.valueAsNumber,
