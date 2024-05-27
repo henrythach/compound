@@ -193,7 +193,7 @@
         interestRate = interestRate || 0;
 
         const rows = [];
-        for (let year = 0; year <= maxYears; year++) {
+        for (let year = 1; year <= maxYears; year++) {
           const startingBalance = balance;
           let growth;
           if (isBefore) {
